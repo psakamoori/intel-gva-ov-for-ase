@@ -1,0 +1,28 @@
+FROM openvisualcloud/vcaca-ubuntu1804-analytics-gst
+
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libgtk2.0-dev \
+    libssl-dev \
+    libffi-dev \
+    python3-pip
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y locales \
+    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+    && dpkg-reconfigure --frontend=noninteractive locales \
+    && update-locale LANG=en_US.UTF-8
+ENV LANG en_US.UTF-8 
+ENV LC_ALL en_US.UTF-8
+
+COPY requirements.txt ./
+RUN pip3 install -r requirements.txt && \
+    pip3 install flask opencv-python
+
+
+COPY dlstreamer_test dlstreamer_test/
+COPY main.py ./
+
+CMD [ "python3", "-u", "./main.py", "-i",  "/dlstreamer_test/head-pose-face-detection-female-and-male.mp4", "-d", "/dlstreamer_test/intel/face-detection-adas-0001/FP32-INT8/face-detection-adas-0001.xml", "-c1", "intel/age-gender-recognition-retail-0013/FP32/age-gender-recognition-retail-0013.xml"]
