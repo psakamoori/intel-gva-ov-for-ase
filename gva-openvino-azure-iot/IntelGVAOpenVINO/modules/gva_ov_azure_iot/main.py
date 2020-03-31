@@ -15,12 +15,18 @@ from gstgva import VideoFrame, util
 
 input="dlstreamer_test/head-pose-face-detection-female-and-male.mp4"
 detection_model="dlstreamer_test/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml"
+classification_age_gender="dlstreamer_test/intel/age-gender-recognition-retail-0013/FP32/age-gender-recognition-retail-0013.xml"
+#classification_person="dlstreamer_test/intel/person-detection-retail-0013/FP32/person-detection-retail-0013.xml"
+label_file="dlstreamer_test/age-gender-recognition-retail-0013.json"
 
 def create_launch_string():
     return "filesrc location={} ! decodebin ! \
     gvadetect model={} device=CPU ! \
-    gvametaconvert ! fakesink name=sink sync=false".format(input, detection_model)
+    gvaclassify model={} model_proc={} device=CPU ! \
+    gvametaconvert ! gvafpscounter ! fakesink name=sink sync=false".format(input, detection_model, classification_age_gender, label_file)
 
+#gvawatermark ! videoconvert ! fpsdisplaysink video-sink=xvimagesink (Render)
+#fakesink name=sink sync=false (No Render)
 
 def gobject_mainloop():
     mainloop = GObject.MainLoop()
