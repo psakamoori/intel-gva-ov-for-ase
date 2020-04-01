@@ -19,7 +19,7 @@ from gstgva import VideoFrame, util
 #IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
 #iot_hub_manager = IotHubManager(IOT_HUB_PROTOCOL)
 
-input="dlstreamer_test/people.mp4"
+input="dlstreamer_test/head-pose-face-detection-female-and-male"
 detection_model="dlstreamer_test/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml"
 classification_age_gender="dlstreamer_test/intel/age-gender-recognition-retail-0013/FP16/age-gender-recognition-retail-0013.xml"
 classification_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/FP16/person-vehicle-bike-detection-crossroad-1016.xml"
