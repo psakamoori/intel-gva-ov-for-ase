@@ -4,6 +4,7 @@ import sys
 import json
 
 import gi
+#import iot_hub_manager
 
 gi.require_version('GObject', '2.0')
 gi.require_version('Gst', '1.0')
@@ -13,20 +14,25 @@ gi.require_version('GstVideo', '1.0')
 from gi.repository import Gst, GObject, GstApp, GstVideo
 from gstgva import VideoFrame, util
 
-input="dlstreamer_test/head-pose-face-detection-female-and-male.mp4"
-detection_model="dlstreamer_test/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml"
-classification_age_gender="dlstreamer_test/intel/age-gender-recognition-retail-0013/FP32/age-gender-recognition-retail-0013.xml"
-#classification_person="dlstreamer_test/intel/person-detection-retail-0013/FP32/person-detection-retail-0013.xml"
-label_file="dlstreamer_test/age-gender-recognition-retail-0013.json"
+# Adding iot support
+# Choose HTTP, AMQP or MQTT as transport protocol.  Currently only MQTT is supported.
+#IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
+#iot_hub_manager = IotHubManager(IOT_HUB_PROTOCOL)
+
+input="dlstreamer_test/people.mp4"
+detection_model="dlstreamer_test/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml"
+classification_age_gender="dlstreamer_test/intel/age-gender-recognition-retail-0013/FP16/age-gender-recognition-retail-0013.xml"
+classification_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/FP16/person-vehicle-bike-detection-crossroad-1016.xml"
+label_file_age_gender="dlstreamer_test/age-gender-recognition-retail-0013.json"
+lable_file_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/person-vehicle-bike-detection-crossroad-0078.json"
 
 def create_launch_string():
     return "filesrc location={} ! decodebin ! \
     gvadetect model={} device=CPU ! \
     gvaclassify model={} model_proc={} device=CPU ! \
-    gvametaconvert ! gvafpscounter ! fakesink name=sink sync=false".format(input, detection_model, classification_age_gender, label_file)
-
-#gvawatermark ! videoconvert ! fpsdisplaysink video-sink=xvimagesink (Render)
-#fakesink name=sink sync=false (No Render)
+    gvadetect model={} device=CPU ! \
+    gvametaconvert ! gvafpscounter ! fakesink name=sink sync=false ".format(input, detection_model, classification_age_gender, label_file_age_gender,
+                                                                    classification_person)
 
 def gobject_mainloop():
     mainloop = GObject.MainLoop()
@@ -52,6 +58,8 @@ def bus_call(bus, message, pipeline):
 def frame_callback(frame: VideoFrame):
     for message in frame.messages():
         m = json.loads(message)
+        #if iot_hub_manager is not None:
+        #    iot_hub_manager.send_message_to_upstream(json.dumps(message))
         print(m)
 
 
