@@ -6,7 +6,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libgtk2.0-dev \
     libssl-dev \
-    libffi-dev 
+    libffi-dev \
+    python3-pip
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y locales \
@@ -22,10 +23,13 @@ RUN apt-get install -y \
      python-gst-1.0
 
 RUN apt-get install -y git 
-COPY requirements.txt ./
-RUN pip3 install -r requirements.txt && \
-    pip3 install flask opencv-python 
 
+COPY requirements.txt ./
+RUN apt-get install python-pip -y \
+    libboost-python-dev 
+
+RUN pip3 install numpy
+RUN pip install -r requirements.txt
 
 COPY dlstreamer_test dlstreamer_test/
 RUN chmod 777 -R dlstreamer_test
@@ -37,5 +41,5 @@ RUN ln -s gst-video-analytics/python/gstgva .
 
 RUN cd ../app
 COPY main.py ./
-
-CMD [ "python3", "-u", "./main.py", "-i",  "/dlstreamer_test/head-pose-face-detection-female-and-male.mp4", "-d", "/dlstreamer_test/intel/face-detection-adas-0001/FP32-INT8/face-detection-adas-0001.xml", "-c1", "intel/age-gender-recognition-retail-0013/FP32/age-gender-recognition-retail-0013.xml"]
+COPY iot_hub_manager.py ./
+CMD [ "python3", "-u", "./main.py"]
