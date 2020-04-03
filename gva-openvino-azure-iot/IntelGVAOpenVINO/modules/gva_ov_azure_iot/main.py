@@ -19,20 +19,20 @@ from gstgva import VideoFrame, util
 #IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
 #iot_hub_manager = IotHubManager(IOT_HUB_PROTOCOL)
 
-input="dlstreamer_test/head-pose-face-detection-female-and-male"
-detection_model="dlstreamer_test/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml"
+input="dlstreamer_test/head-pose-face-detection-female-and-male.mp4"
+detection_model="dlstreamer_test/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001.xml"
 classification_age_gender="dlstreamer_test/intel/age-gender-recognition-retail-0013/FP16/age-gender-recognition-retail-0013.xml"
-classification_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/FP16/person-vehicle-bike-detection-crossroad-1016.xml"
+detect_person="dlstreamer_test/intel/person-detection-retail-0013/FP16/person-detection-retail-0013.xml"
 label_file_age_gender="dlstreamer_test/age-gender-recognition-retail-0013.json"
-lable_file_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/person-vehicle-bike-detection-crossroad-0078.json"
+#lable_file_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/person-vehicle-bike-detection-crossroad-0078.json"
 
 def create_launch_string():
     return "filesrc location={} ! decodebin ! \
     gvadetect model={} device=CPU ! \
-    gvaclassify model={} model_proc={} device=CPU ! \
+    gvaclassify model={} model_proc={} device=CPU !  \
     gvadetect model={} device=CPU ! \
-    gvametaconvert ! gvafpscounter ! fakesink name=sink sync=false ".format(input, detection_model, classification_age_gender, label_file_age_gender,
-                                                                    classification_person)
+    gvametaconvert ! gvawatermark ! videoconvert ! fpsdisplaysink video-sink=xvimagesink name=sink sync=false ".format(input, detection_model, 
+                                                        classification_age_gender, label_file_age_gender, detect_person)
 
 def gobject_mainloop():
     mainloop = GObject.MainLoop()
@@ -40,7 +40,6 @@ def gobject_mainloop():
         mainloop.run()
     except KeyboardInterrupt:
         pass
-
 
 def bus_call(bus, message, pipeline):
     t = message.type
