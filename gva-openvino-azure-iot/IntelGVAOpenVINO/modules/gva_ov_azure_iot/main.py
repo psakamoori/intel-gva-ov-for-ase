@@ -18,6 +18,7 @@ from gstgva import VideoFrame, util
 # Choose HTTP, AMQP or MQTT as transport protocol.  Currently only MQTT is supported.
 #IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
 #iot_hub_manager = IotHubManager(IOT_HUB_PROTOCOL)
+NUM_OF_INP_STREAMS = 4
 
 input="dlstreamer_test/head-pose-face-detection-female-and-male.mp4"
 detection_model="dlstreamer_test/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001.xml"
@@ -26,13 +27,13 @@ detect_person="dlstreamer_test/intel/person-detection-retail-0013/FP16/person-de
 label_file_age_gender="dlstreamer_test/age-gender-recognition-retail-0013.json"
 #lable_file_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/person-vehicle-bike-detection-crossroad-0078.json"
 
-def create_launch_string():
+def create_launch_string(pipe):
     return "filesrc location={} ! decodebin ! \
-    gvadetect model={} device=CPU ! \
-    gvaclassify model={} model_proc={} device=CPU !  \
-    gvadetect model={} device=CPU ! \
-    gvametaconvert ! gvawatermark ! videoconvert ! fpsdisplaysink video-sink=xvimagesink name=sink sync=false ".format(input, detection_model, 
-                                                        classification_age_gender, label_file_age_gender, detect_person)
+    gvadetect model={} device=CPU batch-size=1 nireq=5 ! queue !\
+    gvaclassify model={} model_proc={} device=CPU batch-size=1 nireq=5 ! queue ! \
+    gvadetect model={} device=CPU batch-size=1 nireq=5 ! queue ! \
+    gvafpscounter ! fakesink sync=false name=sink{} ".format(input, detection_model, classification_age_gender, label_file_age_gender, detect_person, pipe)
+#    gvametaconvert ! gvawatermark ! videoconvert ! fpsdisplaysink video-sink=fakesink sync=false name=sink{} async-handling=true ".
 
 def gobject_mainloop():
     mainloop = GObject.MainLoop()
@@ -71,8 +72,8 @@ def pad_probe_callback(pad, info):
     return Gst.PadProbeReturn.OK
 
 
-def set_callbacks(pipeline):
-    sink = pipeline.get_by_name("sink")
+def set_callbacks(pipeline, pipe):
+    sink = pipeline.get_by_name("sink"+str(pipe))
     pad = sink.get_static_pad("sink")
     pad.add_probe(Gst.PadProbeType.BUFFER, pad_probe_callback)
 
@@ -82,11 +83,21 @@ def set_callbacks(pipeline):
 
 if __name__ == '__main__':
     Gst.init(sys.argv)
-    gst_launch_string = create_launch_string()
+    gst_launch_string = ""
+    pipe = NUM_OF_INP_STREAMS
+
+    while(pipe):
+        gst_launch_string += create_launch_string(pipe)
+        pipe -= 1
+
     print(gst_launch_string)
     pipeline = Gst.parse_launch(gst_launch_string)
 
-    set_callbacks(pipeline)
+    pipe = NUM_OF_INP_STREAMS
+
+    while(pipe):
+       set_callbacks(pipeline, pipe)
+       pipe -= 1
 
     pipeline.set_state(Gst.State.PLAYING)
 
