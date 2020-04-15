@@ -18,22 +18,18 @@ from gstgva import VideoFrame, util
 # Choose HTTP, AMQP or MQTT as transport protocol.  Currently only MQTT is supported.
 #IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
 #iot_hub_manager = IotHubManager(IOT_HUB_PROTOCOL)
-NUM_OF_INP_STREAMS = 4
+NUM_OF_INP_STREAMS = 1
 
-input="dlstreamer_test/head-pose-face-detection-female-and-male.mp4"
-detection_model="dlstreamer_test/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001.xml"
-classification_age_gender="dlstreamer_test/intel/age-gender-recognition-retail-0013/FP16/age-gender-recognition-retail-0013.xml"
-detect_person="dlstreamer_test/intel/person-detection-retail-0013/FP16/person-detection-retail-0013.xml"
-label_file_age_gender="dlstreamer_test/age-gender-recognition-retail-0013.json"
-#lable_file_person="dlstreamer_test/intel/person-vehicle-bike-detection-crossroad-1016/person-vehicle-bike-detection-crossroad-0078.json"
+input="dlstreamer_test/car-detection.mp4"
+detection_model="dlstreamer_test/intel/vehicle-license-plate-detection-barrier-0106/FP32-INT8/vehicle-license-plate-detection-barrier-0106.xml"
+label_file="dlstreamer_test/intel/vehicle-license-plate-detection-barrier-0106/vehicle-license-plate-detection-barrier-0106.json"
 
+# File out options
 def create_launch_string(pipe):
     return "filesrc location={} ! decodebin ! \
-    gvadetect model={} device=CPU batch-size=1 nireq=5 ! queue !\
-    gvaclassify model={} model_proc={} device=CPU batch-size=1 nireq=5 ! queue ! \
-    gvadetect model={} device=CPU batch-size=1 nireq=5 ! queue ! \
-    gvafpscounter ! fakesink sync=false name=sink{} ".format(input, detection_model, classification_age_gender, label_file_age_gender, detect_person, pipe)
-#    gvametaconvert ! gvawatermark ! videoconvert ! fpsdisplaysink video-sink=fakesink sync=false name=sink{} async-handling=true ".
+    gvadetect model={} model_proc={} device=CPU batch-size=1 nireq=5 ! queue ! \
+    gvametaconvert ! gvametapublish ! gvafpscounter ! fakesink name=sink{} sync=false".format(input, detection_model, label_file, pipe)
+
 
 def gobject_mainloop():
     mainloop = GObject.MainLoop()
@@ -49,7 +45,8 @@ def bus_call(bus, message, pipeline):
         pipeline.set_state(Gst.State.NULL)
         sys.exit()
     elif t == Gst.MessageType.ERROR:
-        print("error {}".format(message))
+        err, debug = message.parse_error()
+        print("element {} error {} dbg {}".format(message.src.name, err, debug))
     else:
         pass
     return True
