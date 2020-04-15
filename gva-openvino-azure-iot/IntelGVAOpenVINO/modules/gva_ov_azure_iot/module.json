@@ -2,7 +2,7 @@
   "$schema-version": "0.0.1",
   "description": "",
   "image": {
-    "repository": "intelcustomvision.azurecr.io/gva_ov_azure_iot",
+    "repository": "$CONTAINER_REGISTRY_NAME/gva_ov_azure_iot",
     "tag": {
       "version": "0.0.1",
       "platforms": {
