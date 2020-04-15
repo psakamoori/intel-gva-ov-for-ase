@@ -1,0 +1,19 @@
+{
+  "json_schema_version": 1.0,
+  "input_preproc": [
+    {
+      "color_format": "BGR"
+    }
+  ],
+  "output_postproc": [
+    {
+      "labels": [
+        "",
+        "vehicle",
+        "license-plate"
+      ],
+      "converter": "tensor_to_bbox_ssd",
+      "layer_name": "DetectionOutput_"
+    }
+  ]
+}
