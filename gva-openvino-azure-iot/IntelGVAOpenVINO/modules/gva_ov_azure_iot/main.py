@@ -5,6 +5,13 @@ import json
 import gi
 #import iot_hub_manager
 
+import shlex, socket, shutil
+import os, time
+
+from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
+import subprocess
+
 gi.require_version('GObject', '2.0')
 gi.require_version('Gst', '1.0')
 gi.require_version('GstApp', '1.0')
@@ -12,6 +19,8 @@ gi.require_version('GstVideo', '1.0')
 
 from gi.repository import Gst, GObject, GstApp, GstVideo
 from gstgva import VideoFrame, util
+from rtsp.rtsp_server import GstServer
+from rtsp.publisher import Publisher
 
 # Adding iot support
 # Choose HTTP, AMQP or MQTT as transport protocol.  Currently only MQTT is supported.
@@ -22,19 +31,36 @@ class OVDLStreamer():
 
     def __init__(self, stream_type, stream_source, no_of_streams,  \
                                             clas_model, det_model, label_file):
-        self.inp_stream_type ="file"
-        self.inp_stream_soruce="dlstreamer_test/car-detection.mp4"
-        self.num_of_inp_streams = 1
-        self.detection_model="dlstreamer_test/intel/vehicle-license-plate-detection-barrier-0106/FP32-INT8/vehicle-license-plate-detection-barrier-0106.xml"
+        self.type ="file"
+        self.source=["dlstreamer_test/car-detection.mp4"]
+        self.streams = 1
+        self.det_model="dlstreamer_test/intel/vehicle-license-plate-detection-barrier-0106/FP32-INT8/vehicle-license-plate-detection-barrier-0106.xml"
         self.label_file="dlstreamer_test/intel/vehicle-license-plate-detection-barrier-0106/vehicle-license-plate-detection-barrier-0106.json"
 
-    # File out options
-    def create_launch_string(self, pipe):
-        if(self.inp_stream_type == "file"):
+        self.print_fps = True
+        self.use_rtspsrc = False
+        self.save_mp4 = False
+        self.print_rtsp_debug = False
+        self.enable_rtsp = True
+        self.print_detections = True
+        self.index = 1
+
+    def create_launch_string(self, publish_args, sink_no):
+
+        publish_args = shlex.quote(json.dumps(publish_args))
+
+        if(self.type == "file"):
            return "filesrc location={} ! decodebin ! \
-               gvadetect model={} model_proc={} device=CPU batch-size=1 nireq=5 ! queue ! \
-               gvametaconvert ! gvametapublish ! gvafpscounter ! fakesink name=sink{} sync=false ".format(self.inp_stream_soruce, \
-                                                                                    self.detection_model, self.label_file, pipe)
+               gvadetect model={} model_proc={} device=CPU batch-size=1 ! queue ! \
+               gvawatermark ! gvametaconvert ! gvafpscounter ! gvapython module=./rtsp/publisher class=Publisher args={} ! \
+                fakesink name=sink{} sync=false ".format(self.source[sink_no], self.det_model, self.label_file, publish_args, sink_no+1)
+
+        if(self.type == "rtsp"):
+            return "rtspsrc udp-buffer-size=212992 name=source location={} ! queue ! rtph264depay ! \
+                    h264parse ! video/x-h264 ! queue ! avdec_h264 ! videoconvert name=\"videoconvert\" ! \
+                    video/x-raw,format=BGRA ! queue leaky=upstream !  gvadetect model={} model_proc={} device=CPU batch-size=1 ! \
+                    queue ! gvawatermark ! gvametaconvert method=detection ! gvapython module=./rtsp/publisher class=Publisher args={} ! \
+                     fakesink name=sink{} ".format(self.source[sink_no], self.det_model, self.label_file, publish_args, sink_no+1)
 
     def gobject_mainloop(self):
        mainloop = GObject.MainLoop()
@@ -74,8 +100,8 @@ class OVDLStreamer():
 
     def set_callbacks(self, pipeline, pipe):
         sink = pipeline.get_by_name("sink"+str(pipe))
-        pad = sink.get_static_pad("sink")
-        pad.add_probe(Gst.PadProbeType.BUFFER, self.pad_probe_callback)
+        #pad = sink.get_static_pad("sink")
+        #pad.add_probe(Gst.PadProbeType.BUFFER, self.pad_probe_callback)
 
         bus = pipeline.get_bus()
         bus.add_signal_watch()
@@ -86,17 +112,24 @@ if __name__ == '__main__':
     dlstr = OVDLStreamer("file", None, 1, None, None, None)
 
     Gst.init(sys.argv)
-    gst_launch_string = ""
-    pipe = dlstr.num_of_inp_streams
 
-    while(pipe):
-        gst_launch_string += dlstr.create_launch_string(pipe)
-        pipe -= 1
+    if (dlstr.enable_rtsp):
+        s = GstServer(len(dlstr.source), dlstr.print_detections)
+
+    gst_launch_string = ""
+    idx = dlstr.streams
+
+    while(idx):
+        gst_launch_string += dlstr.create_launch_string({"source":dlstr.source[idx - 1], "index":idx,
+                                                        "output_frames":dlstr.enable_rtsp,
+                                                        "print_detections":dlstr.print_detections}, idx-1)
+        idx -= 1
 
     print(gst_launch_string)
     pipeline = Gst.parse_launch(gst_launch_string)
 
-    pipe = dlstr.num_of_inp_streams
+
+    pipe = dlstr.streams
 
     while(pipe):
        dlstr.set_callbacks(pipeline, pipe)
