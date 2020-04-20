@@ -52,7 +52,7 @@ class OVDLStreamer():
         #print("publish_args == ", publish_args)
 
         if(self.type == "file"):
-           return "filesrc location={} ! decodebin ! \
+           return "filesrc location={} ! decodebin ! videoconvert ! \
                gvadetect model={} model_proc={} device=CPU batch-size=1 ! queue ! \
                gvawatermark ! videoconvert ! gvametaconvert ! gvafpscounter ! gvapython name=Publisher{} ! \
                fakesink name=sink{} sync=false ".format(self.source[sink_no], self.det_model, self.label_file, sink_no+1, sink_no+1)
