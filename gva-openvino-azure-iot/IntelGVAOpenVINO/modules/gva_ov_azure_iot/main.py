@@ -3,7 +3,7 @@
 import sys
 import json
 import gi
-#import iot_hub_manager
+import iot_hub_manager
 
 gi.require_version('GObject', '2.0')
 gi.require_version('Gst', '1.0')
@@ -15,8 +15,8 @@ from gstgva import VideoFrame, util
 
 # Adding iot support
 # Choose HTTP, AMQP or MQTT as transport protocol.  Currently only MQTT is supported.
-#IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
-#iot_hub_manager = IotHubManager(IOT_HUB_PROTOCOL)
+IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
+iot_hub_manager = IotHubManager(IOT_HUB_PROTOCOL)
 
 class OVDLStreamer():
 
@@ -75,7 +75,7 @@ class OVDLStreamer():
         for message in frame.messages():
             m = json.loads(message)
             #if iot_hub_manager is not None:
-            #iot_hub_manager.send_message_to_upstream(json.dumps(message))
+            iot_hub_manager.send_message_to_upstream(json.dumps(message))
             print(m)
 
     def pad_probe_callback(self, pad, info):
