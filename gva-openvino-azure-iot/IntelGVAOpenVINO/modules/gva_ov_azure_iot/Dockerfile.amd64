@@ -1,5 +1,4 @@
-FROM openvisualcloud/vcaca-ubuntu1804-analytics-gst
-
+FROM openvisualcloud/vcaca-ubuntu1604-analytics-gst
 WORKDIR /app
 
 RUN apt-get update && \
@@ -9,27 +8,23 @@ RUN apt-get update && \
     libffi-dev \
     python3-pip
 
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y locales \
-    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-    && dpkg-reconfigure --frontend=noninteractive locales \
-    && update-locale LANG=en_US.UTF-8
-ENV LANG en_US.UTF-8 
-ENV LC_ALL en_US.UTF-8
-
 RUN apt-get install -y \
      python3-pip \
      python3-gi \
      python-gst-1.0
 
-RUN apt-get install -y git 
+RUN apt-get update && \
+    apt-get install -y git cmake build-essential curl libcurl4-openssl-dev libssl-dev uuid-dev && \ 
+    apt-get install -y --no-install-recommends libcurl4-openssl-dev && \
+    apt-get install -y git
+    
+RUN apt-get update && \
+    apt-get -y install git sudo wget \
+    zip x11-apps lsb-core cpio libboost-python1.58-dev libpython3-dev zlib1g-dev libboost-filesystem1.58.0 libboost-thread1.58.0 libusb-1.0-0-dev
 
 COPY requirements.txt ./
-RUN apt-get install python-pip -y \
-    libboost-python-dev 
-
-RUN pip3 install numpy
-RUN pip install -r requirements.txt
+     
+RUN pip3 install -r requirements.txt
 
 COPY dlstreamer_test dlstreamer_test/
 RUN chmod 777 -R dlstreamer_test
@@ -42,4 +37,5 @@ RUN ln -s gst-video-analytics/python/gstgva .
 RUN cd ../app
 COPY main.py ./
 COPY iot_hub_manager.py ./
+COPY utility.py ./
 CMD [ "python3", "-u", "./main.py"]
