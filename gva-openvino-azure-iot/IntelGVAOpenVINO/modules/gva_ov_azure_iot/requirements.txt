@@ -1,6 +1,3 @@
 azure-iothub-device-client
-azure-iothub-service-client 
-azure-iot-provisioning-device-client
-azure-iot-device
+setuptools 
 numpy
-setuptools
