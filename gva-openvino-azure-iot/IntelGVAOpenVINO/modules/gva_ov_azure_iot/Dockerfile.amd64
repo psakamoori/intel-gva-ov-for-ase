@@ -5,8 +5,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libgtk2.0-dev \
     libssl-dev \
-    libffi-dev \
-    python3-pip
+    libffi-dev
 
 RUN apt-get install -y \
      python3-pip \
