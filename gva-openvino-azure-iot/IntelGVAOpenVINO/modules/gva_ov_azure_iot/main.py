@@ -13,6 +13,9 @@ gi.require_version('GstVideo', '1.0')
 from gi.repository import Gst, GObject, GstApp, GstVideo
 from gstgva import VideoFrame, util
 
+from iot_hub_manager import IotHubManager
+from iothub_client import IoTHubTransportProvider, IoTHubError
+
 # Adding iot support
 # Choose HTTP, AMQP or MQTT as transport protocol.  Currently only MQTT is supported.
 IOT_HUB_PROTOCOL = IoTHubTransportProvider.MQTT
