@@ -10,6 +10,12 @@ import logging
 from iothub_client import IoTHubClient, IoTHubMessage, IoTHubModuleClient, IoTHubMessageDispositionResult,IoTHubClientError, IoTHubTransportProvider, IoTHubClientResult, IoTHubError
 from utility import get_file_zip
 
+# For Azure IoT SDK ~= 2.0.0
+#from azure.iot.device.aio import IoTHubModuleClient, IoTHubClient
+#from azure.iot.device.message import IoTHubMessage
+#from azure.iot.device.exception import IoTHubClientError
+#from azure.iot.device import IoTHubTransportProvider, IoTHubMessageDispositionResult, IoTHubClientResult, IoTHubError
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
